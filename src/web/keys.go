@@ -1,16 +1,51 @@
-package main
+package web
 
 import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 	"log"
 )
 
 var priv *rsa.PrivateKey
+var pub any
 
-func initPrivateKey() {
-	println("initPrivateKey called!")
+func InitPublicKey() {
+	block, _ := pem.Decode([]byte(`-----BEGIN PUBLIC KEY-----
+MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAmaVXal9/dUkmnLf430AA
+IgHj90r5sBsGuEZ47Fx9Oth7fvqUHUyWN6kxArRCQdbQs55v4W8t13zowNY9eLrR
++a647cSYna/3ptJgkSYsAeDAcStpmWukIvgFnLetpSuKoWUTA9h0jz9GDqKAnLHA
+qIIXD3gNXJCCtPhXa/d8P1VNJFdji5/tdQMQ5cEuqxG6JeYSFFkGxSUEGMgm9zBI
+BMVGH4+Oe4f4o7Le8UFYaMACREHdhYFuvZ4nzWI/NFSEjdqDRZiab7Wixp63dWuz
+/Bb5LgVCF7RcgMJfBHamzmHR1UPKOVofjME15n29xTNJn13laMeWNhy2llWTXt6i
+A+HaJ3oWNR/uKNbjBFiiZKgk8f320CF5aK8TnmuErvlosWx0kKBfpkBQ4d5ysSOw
+ZyYrE/PuOsaMQATiYS2mL0DcveMRSerJG7UNBPV1jXax3pkCi6zIQtPdS2s+uHD3
+7HLt+dR5dE3R/WG7XK9KRUmOWmt5lV+c66zubzhb6Jzo4T87j8d0jyDtKYhxi0xd
+l00fO4CKJ5IaLQamgjvk2KCGdq6A81uLnFQ3tEu7KmrBS/npKsPvelUTcQx5TOrr
+NWdMH8y42VrR5K8ZlxgfBUNJvqepONUDJqBmeySNjlC8iklpqhtij23IO2ssEYbT
+pSboqBfKVFcaiJ5DVWJn4WUCAwEAAQ==
+-----END PUBLIC KEY-----`))
+	if block == nil {
+		log.Fatal("failed to decode PEM block containing public key")
+	}
+
+	var err error
+	pub, err = x509.ParsePKIXPublicKey(block.Bytes)
+
+	switch pub.(type) {
+	case *rsa.PublicKey:
+		fmt.Println("pub is of type RSA")
+	default:
+		panic("unknown type of public key")
+	}
+
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func InitPrivateKey() {
 	block, _ := pem.Decode([]byte(`-----BEGIN RSA PRIVATE KEY-----
 MIIJKAIBAAKCAgEAmaVXal9/dUkmnLf430AAIgHj90r5sBsGuEZ47Fx9Oth7fvqU
 HUyWN6kxArRCQdbQs55v4W8t13zowNY9eLrR+a647cSYna/3ptJgkSYsAeDAcStp
