@@ -1,11 +1,11 @@
 package database
 
 type EmailUser struct {
-	Email string `form:"email"`
+	Email string `json:"email"`
 }
 
 type PasswordUser struct {
-	Password string `form:"password"`
+	Password string `json:"password"`
 }
 
 type User struct {

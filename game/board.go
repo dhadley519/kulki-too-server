@@ -27,7 +27,6 @@ func (b *Board) randomNext3Colors() {
 	for i := 0; i < 3; i++ {
 		b.nextBallColors[i] = rand.Intn(b.NumberOfColors) + 1
 	}
-	println("randomNext3Colors ", b.nextBallColors[0], b.nextBallColors[1], b.nextBallColors[2])
 }
 
 func (b *Board) addNext3Balls() []*BoardCommand {

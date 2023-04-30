@@ -1,13 +1,13 @@
 package web
 
 import (
-	"awesomeProject/database"
-	"awesomeProject/game"
 	"errors"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+	"kulki/database"
+	"kulki/game"
 	"net/http"
 	"time"
 )
@@ -23,8 +23,9 @@ func (k *KulkiWebServer) Run() error {
 
 func SetupWeb(db *database.KulkiDatabase) *KulkiWebServer {
 	var router = gin.Default()
+
 	var config = cors.Config{}
-	config.AllowOrigins = []string{"http://127.0.0.1:3000", "http://127.0.0.1:8080", "http://localhost:3000", "http://localhost:8080"}
+	config.AllowOrigins = []string{"http://localhost:3030"}
 	config.AllowCredentials = true
 	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type"}
 
@@ -38,6 +39,8 @@ func SetupWeb(db *database.KulkiDatabase) *KulkiWebServer {
 	router.GET("/statistics", w.statistics)
 	router.GET("/start", w.start)
 	router.GET("/reset", w.reset)
+	router.StaticFile("/index.html", "./public/index.html")
+	router.Static("/static", "./public")
 
 	return w
 }
@@ -68,8 +71,8 @@ func (k *KulkiWebServer) start(ctx *gin.Context) {
 		if err != nil || board == nil {
 			board = game.NewBoard(9, 9, 6)
 			commands = board.OnStartMessageReceipt()
-			err = k.db.SetBoard(emailUser, board)
-			if err != nil {
+			setBoardErr := k.db.SetBoard(emailUser, board)
+			if setBoardErr != nil {
 				ctx.JSON(http.StatusInternalServerError, nil)
 				return
 			}
@@ -122,6 +125,7 @@ func (k *KulkiWebServer) move(ctx *gin.Context) {
 					updateBoardError := k.db.UpdateBoard(emailUser, b)
 					err = updateBoardError
 					if updateBoardError == nil {
+						println("move success")
 						ctx.JSON(http.StatusOK, commands)
 						return
 					}
@@ -193,7 +197,14 @@ func (k *KulkiWebServer) getEmailAddressFromCookie(ctx *gin.Context) (*database.
 }
 
 func (k *KulkiWebServer) login(ctx *gin.Context) {
-	var user = database.User{EmailUser: database.EmailUser{Email: ctx.PostForm("email")}, PasswordUser: database.PasswordUser{Password: ctx.PostForm("password")}}
+
+	var user database.User
+	bindError := ctx.BindJSON(&user)
+	if bindError != nil {
+		ctx.JSON(http.StatusBadRequest, nil)
+	}
+
+	//var user = database.User{EmailUser: database.EmailUser{Email: ctx.PostForm("email")}, PasswordUser: database.PasswordUser{Password: ctx.PostForm("password")}}
 	err := k.authUser(user)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, user.EmailUser)
@@ -213,18 +224,24 @@ type formData struct {
 }
 
 func (k *KulkiWebServer) register(ctx *gin.Context) {
-	var f = formData{email: ctx.PostForm("email"), password: ctx.PostForm("password")}
-	err := ctx.Bind(&f)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, nil)
-		return
+	//var f = formData{email: ctx.PostForm("email"), password: ctx.PostForm("password")}
+	//err := ctx.Bind(&f)
+	//if err != nil {
+	//	ctx.JSON(http.StatusInternalServerError, nil)
+	//	return
+	//}
+	var postedUser database.User
+	bindError := ctx.BindJSON(&postedUser)
+	if bindError != nil {
+		ctx.JSON(http.StatusBadRequest, nil)
 	}
-	hashedPasswordUser, err := hashPassword(database.PasswordUser{Password: f.password})
+
+	hashedPasswordUser, err := hashPassword(database.PasswordUser{Password: postedUser.Password})
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		return
 	}
-	var user = database.User{EmailUser: database.EmailUser{Email: f.email}, PasswordUser: *hashedPasswordUser}
+	var user = database.User{EmailUser: database.EmailUser{Email: postedUser.Email}, PasswordUser: *hashedPasswordUser}
 	err = k.db.AddUser(&user)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, nil)

@@ -1,14 +1,16 @@
 package main
 
 import (
-	"awesomeProject/database"
-	"awesomeProject/web"
+	"kulki/database"
+	"kulki/web"
+	"os"
 )
 
 func main() {
+
 	web.InitPrivateKey()
 	web.InitPublicKey()
-	k := database.SetupDb()
+	k := database.SetupDb(os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_PASSWORD"), os.Getenv("POSTGRES_HOST"))
 	defer func(k *database.KulkiDatabase) {
 		err := k.Close()
 		if err != nil {
