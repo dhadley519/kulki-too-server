@@ -112,7 +112,8 @@ func (b *Board) OnPathFindReceipt(path *MovePath) ([]*Position, bool) {
 func (b *Board) move(move *MovePath) bool {
 	var from = b.world.getPosition(move.From.X, move.From.Y)
 	var to = b.world.getPosition(move.To.X, move.To.Y)
-	if from.C != nil {
+	_, success := b.FindSolution(from, to)
+	if success && from.C != nil {
 		to.C = from.C
 		b.release(from)
 		return true
